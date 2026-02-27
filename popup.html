@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>JackHack Prime</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #0d0d1a;
+      --bg2:    #141428;
+      --card:   #1a1a35;
+      --accent: #ff4d6d;
+      --gold:   #ffd166;
+      --green:  #06d6a0;
+      --blue:   #118ab2;
+      --text:   #e8e8f0;
+      --muted:  #8888aa;
+      --radius: 10px;
+    }
+
+    html { width: 400px; }
+    body {
+      width: 400px;
+      min-height: 180px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
+      overflow-x: hidden;
+      padding-bottom: 4px;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a0533 0%, #2d0f5c 50%, #1a0533 100%);
+      padding: 14px 16px 12px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 2px solid var(--accent);
+      position: relative; overflow: hidden;
+    }
+    header::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(45deg, transparent, transparent 10px,
+        rgba(255,77,109,.04) 10px, rgba(255,77,109,.04) 20px);
+    }
+    .logo { font-size: 26px; filter: drop-shadow(0 0 8px rgba(255,77,109,.8)); position: relative; }
+    .title-block { position: relative; }
+    .title-block h1 {
+      font-size: 15px; font-weight: 800; letter-spacing: .5px; color: #fff;
+      text-shadow: 0 0 10px rgba(255,77,109,.6);
+    }
+    .title-block small { font-size: 10px; color: var(--muted); letter-spacing: .3px; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; margin-left: auto;
+      background: #555; transition: all .4s; position: relative;
+    }
+    .status-dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .status-dot.active::after {
+      content: ''; position: absolute; inset: -3px; border-radius: 50%;
+      border: 1px solid var(--green); animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0;transform:scale(1.8)} }
+
+    /* ── Room bar ── */
+    #room-bar {
+      background: var(--bg2); padding: 8px 16px;
+      display: none; align-items: center; gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+    #room-bar.visible { display: flex; }
+    .room-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+    .room-code {
+      font-size: 18px; font-weight: 900; letter-spacing: 4px;
+      color: var(--gold); text-shadow: 0 0 8px rgba(255,209,102,.5);
+    }
+    .phase-badge {
+      margin-left: auto; font-size: 10px; padding: 3px 8px;
+      border-radius: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    }
+    .ph-waiting  { background: rgba(136,136,170,.2); color: var(--muted); }
+    .ph-question { background: rgba(255,77,109,.2);  color: var(--accent); }
+    .ph-minigame { background: rgba(123,45,139,.2);  color: #c06bdb; }
+    .ph-result   { background: rgba(6,214,160,.2);   color: var(--green); }
+
+    /* ── Sections ── */
+    .section { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .sec-title {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .sec-title::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.07); }
+
+    /* ── Question card ── */
+    #q-card { display: none; }
+    #q-card.visible { display: block; }
+
+    .cat-tag {
+      display: inline-block; background: rgba(17,138,178,.25); color: #4fc3f7;
+      border: 1px solid rgba(79,195,247,.3); border-radius: 20px;
+      padding: 2px 10px; font-size: 10px; font-weight: 700;
+      letter-spacing: .5px; text-transform: uppercase; margin-bottom: 8px;
+    }
+    #q-text {
+      font-size: 14px; font-weight: 600; line-height: 1.5; color: #fff;
+      margin-bottom: 12px; padding: 10px 12px;
+      background: rgba(255,255,255,.04);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius) var(--radius) 0;
+    }
+
+    .choices-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .choice {
+      padding: 8px 10px; border-radius: 8px; background: var(--card);
+      border: 1px solid rgba(255,255,255,.08); font-size: 12px; line-height: 1.3;
+      transition: all .3s;
+    }
+    .choice.correct {
+      background: rgba(6,214,160,.15); border-color: var(--green);
+      color: var(--green); box-shadow: 0 0 12px rgba(6,214,160,.2);
+    }
+    .choice.correct::before { content: '✓ '; font-weight: 900; }
+    .cletter {
+      display: inline-block; width: 18px; height: 18px; background: rgba(255,255,255,.1);
+      border-radius: 4px; text-align: center; line-height: 18px;
+      font-size: 10px; font-weight: 800; margin-right: 4px; vertical-align: middle;
+    }
+    .choice.correct .cletter { background: var(--green); color: #000; }
+
+    /* ── Timer bar ── */
+    #timer-section { display: none; }
+    #timer-section.visible { display: block; }
+    .timer-row { display: flex; align-items: center; gap: 8px; }
+    .timer-num { font-size: 20px; font-weight: 900; color: var(--gold);
+      text-shadow: 0 0 8px rgba(255,209,102,.4); min-width: 32px; }
+    .timer-bar-bg { flex: 1; height: 6px; background: rgba(255,255,255,.08); border-radius: 3px; overflow: hidden; }
+    .timer-bar-fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--gold));
+      border-radius: 3px; transition: width 1s linear; }
+    .timer-bar-fill.low { background: linear-gradient(90deg, #ff6b6b, var(--accent)); }
+
+    /* ── Hints ── */
+    .hint-list { display: flex; flex-direction: column; gap: 5px; }
+    .hint-item {
+      background: rgba(255,209,102,.07); border: 1px solid rgba(255,209,102,.15);
+      border-radius: 7px; padding: 7px 10px; font-size: 12px; line-height: 1.4; color: #e0d0a0;
+    }
+
+    /* ── Minigame ── */
+    #mg-card { display: none; }
+    #mg-card.visible { display: block; }
+    .mg-name { font-size: 15px; font-weight: 800; color: #c06bdb; margin-bottom: 8px; }
+
+    /* ── Waiting ── */
+    #waiting-card { text-align: center; padding: 28px 16px; }
+    #waiting-card .skull { font-size: 46px; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+    #waiting-card p { color: var(--muted); margin-top: 12px; font-size: 13px; line-height: 1.6; }
+    #waiting-card strong { color: var(--text); }
+
+    /* ── Players ── */
+    .player-list { display: flex; flex-wrap: wrap; gap: 5px; }
+    .player-chip {
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+      background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+    }
+    .player-chip.me { background: rgba(255,77,109,.15); border-color: var(--accent); color: var(--accent); }
+
+    /* ── Stats ── */
+    .stats-row { display: flex; gap: 8px; }
+    .stat-box { flex: 1; text-align: center; background: rgba(255,255,255,.04); border-radius: 8px; padding: 8px; }
+    .stat-num { font-size: 20px; font-weight: 900; }
+    .stat-num.g { color: var(--green); }
+    .stat-num.r { color: #f44336; }
+    .stat-num.b { color: #64b5f6; }
+    .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+    /* ════════════════════════════════════════
+       FEATURES SECTION
+    ════════════════════════════════════════ */
+    #feat-header {
+      padding: 10px 16px;
+      display: flex; align-items: center; gap: 8px;
+      cursor: pointer; user-select: none;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      color: var(--muted); font-size: 11px;
+      text-transform: uppercase; letter-spacing: .8px;
+    }
+    #feat-header:hover { color: var(--text); }
+    #feat-arrow { margin-left: auto; transition: transform .25s; }
+    #feat-header.open #feat-arrow { transform: rotate(180deg); }
+
+    #feat-body { display: none; }
+    #feat-body.open { display: block; }
+
+    .feat-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+    .feat-row:last-child { border-bottom: none; }
+    .feat-info { flex: 1; }
+    .feat-name { font-size: 12.5px; font-weight: 600; color: var(--text); }
+    .feat-desc { font-size: 10.5px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+
+    /* Toggle */
+    .tog { position: relative; width: 36px; height: 20px; flex-shrink: 0; margin-top: 2px; }
+    .tog input { opacity: 0; width: 0; height: 0; }
+    .tog-track {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,.12); border-radius: 20px; cursor: pointer; transition: background .2s;
+    }
+    .tog input:checked + .tog-track { background: var(--green); }
+    .tog-thumb {
+      position: absolute; width: 14px; height: 14px; background: #fff;
+      border-radius: 50%; top: 3px; left: 3px; transition: left .2s; pointer-events: none;
+    }
+    .tog input:checked ~ .tog-thumb { left: 19px; }
+
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">💀</div>
+    <div class="title-block">
+      <h1>JACKHACK PRIME</h1>
+      <small>Jackbox Games · Overlay Cheat Tool</small>
+    </div>
+    <div class="status-dot" id="status-dot"></div>
+  </header>
+
+  <!-- Room bar -->
+  <div id="room-bar">
+    <span class="room-label">Комната</span>
+    <span class="room-code" id="room-code">—</span>
+    <span class="phase-badge ph-waiting" id="phase-badge">Ожидание</span>
+  </div>
+
+  <!-- Timer -->
+  <div class="section" id="timer-section">
+    <div class="sec-title">⏱ Таймер</div>
+    <div class="timer-row">
+      <div class="timer-num" id="timer-num">—</div>
+      <div class="timer-bar-bg"><div class="timer-bar-fill" id="timer-fill" style="width:100%"></div></div>
+    </div>
+  </div>
+
+  <!-- Question card -->
+  <div class="section" id="q-card">
+    <div class="sec-title">❓ Вопрос</div>
+    <div id="cat-tag" class="cat-tag" style="display:none"></div>
+    <div id="q-text">Вопрос загружается…</div>
+    <div class="choices-grid" id="choices-grid"></div>
+  </div>
+
+  <!-- Hints -->
+  <div class="section" id="hints-section" style="display:none">
+    <div class="sec-title">💡 Подсказки</div>
+    <div class="hint-list" id="hints-list"></div>
+  </div>
+
+  <!-- Minigame -->
+  <div class="section" id="mg-card">
+    <div class="sec-title">🎮 Мини-игра</div>
+    <div class="mg-name" id="mg-name">—</div>
+    <div class="hint-list" id="mg-hints"></div>
+  </div>
+
+  <!-- Waiting -->
+  <div id="waiting-card">
+    <div class="skull">💀</div>
+    <p>Открой <strong>jackbox.tv</strong><br>и начни игру в <strong>Trivia Murder Party 2</strong>.<br>
+    Оверлей появится автоматически на сайте.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="section" id="stats-section" style="display:none">
+    <div class="sec-title">📊 Статистика</div>
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-num g" id="st-c">0</div><div class="stat-lbl">✓ Верно</div></div>
+      <div class="stat-box"><div class="stat-num r" id="st-w">0</div><div class="stat-lbl">✗ Неверно</div></div>
+      <div class="stat-box"><div class="stat-num b" id="st-a">—</div><div class="stat-lbl">Точность</div></div>
+    </div>
+  </div>
+
+  <!-- Players -->
+  <div class="section" id="players-section" style="display:none">
+    <div class="sec-title">👥 Игроки</div>
+    <div class="player-list" id="player-list"></div>
+  </div>
+
+  <!-- Features accordion -->
+  <div id="feat-header">
+    <span>⚙️</span><span>Функции чита</span>
+    <span id="feat-arrow">▼</span>
+  </div>
+  <div id="feat-body">
+
+    <div class="feat-row">
+      <div class="feat-info">
+        <div class="feat-name">🟢 Подсветка ответа</div>
+        <div class="feat-desc">Зелёная рамка вокруг правильного варианта в оверлее</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="f-highlightAnswer" checked><div class="tog-track"></div><div class="tog-thumb"></div></label>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-info">
+        <div class="feat-name">🤖 Авто-клик</div>
+        <div class="feat-desc">Автоматически нажимает правильный вариант через 0.8 сек</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="f-autoClick"><div class="tog-track"></div><div class="tog-thumb"></div></label>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-info">
+        <div class="feat-name">📟 Оверлей на сайте</div>
+        <div class="feat-desc">Показывает панель JackHack поверх jackbox.tv</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="f-showOverlay" checked><div class="tog-track"></div><div class="tog-thumb"></div></label>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-info">
+        <div class="feat-name">📡 Мониторинг пинга</div>
+        <div class="feat-desc">Показывает задержку до серверов Jackbox</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="f-pingMonitor" checked><div class="tog-track"></div><div class="tog-thumb"></div></label>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-info">
+        <div class="feat-name">📋 История вопросов</div>
+        <div class="feat-desc">Сохраняет последние 20 вопросов и ответов</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="f-historyLog" checked><div class="tog-track"></div><div class="tog-thumb"></div></label>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-info">
+        <div class="feat-name">💡 Подсказки мини-игр</div>
+        <div class="feat-desc">Тактика для каждого типа мини-игры</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="f-miniGameHints" checked><div class="tog-track"></div><div class="tog-thumb"></div></label>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-info">
+        <div class="feat-name">🔔 Звуковой сигнал</div>
+        <div class="feat-desc">Пищит при новом вопросе и при раскрытии ответа</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="f-soundAlert" checked><div class="tog-track"></div><div class="tog-thumb"></div></label>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-info">
+        <div class="feat-name">🎯 Помощник исключения</div>
+        <div class="feat-desc">Анализирует числа, даты и гео-вопросы</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="f-eliminationHelper" checked><div class="tog-track"></div><div class="tog-thumb"></div></label>
+    </div>
+
+    <div class="feat-row">
+      <div class="feat-info">
+        <div class="feat-name">👻 Режим призрака</div>
+        <div class="feat-desc">Видеть ответы других игроков (экспериментально)</div>
+      </div>
+      <label class="tog"><input type="checkbox" id="f-ghostMode"><div class="tog-track"></div><div class="tog-thumb"></div></label>
+    </div>
+
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

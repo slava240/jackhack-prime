@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "JackHack Prime",
+  "version": "2.0.0",
+  "description": "Advanced cheat tool for Jackbox games — TMP2, Quiplash, and more",
+  "permissions": ["scripting", "storage", "activeTab", "tabs"],
+  "host_permissions": [
+    "*://*.jackbox.tv/*",
+    "*://*.jackboxgames.com/*",
+    "*://*.jackbox.fun/*",
+    "*://*.jackbox.ru/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.jackbox.tv/*",
+        "*://*.jackboxgames.com/*",
+        "*://*.jackbox.fun/*",
+        "*://*.jackbox.ru/*"
+      ],
+      "js": ["injector.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["injected.js"],
+      "matches": [
+        "*://*.jackbox.tv/*",
+        "*://*.jackboxgames.com/*",
+        "*://*.jackbox.fun/*",
+        "*://*.jackbox.ru/*"
+      ]
+    }
+  ]
+}
